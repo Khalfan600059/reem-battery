@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خطة الطوارئ التفاعلية الشاملة - شركة ريم للبطاريات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Readex+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Neutrals with Safety Accents -->
+    <!-- Application Structure Plan: تم الحفاظ على هيكل التطبيق الشامل مع إضافة ميزة تبديل اللغة وتنزيل PDF. تم إضافة زر تنزil ومكتبات jspdf و html2canvas. عند النقر، تقوم وظيفة مخصصة بفتح جميع الأقسام والأكورديون مؤقتًا، ثم تلتقط المحتوى وتحوله إلى ملف PDF متعدد الصفحات، ثم تعيد الواجهة إلى حالتها الأصلية. -->
+    <!-- Visualization & Content Choices: 
+    - Info: كامل محتوى التطبيق -> Goal: توفير نسخة PDF قابلة للتنزيل -> Viz: زر تنزيل واضح -> Interaction: النقر لتفعيل عملية إنشاء PDF -> Justification: يتيح للمستخدمين حفظ ومشاركة الخطة بسهولة كوثيقة رسمية، مع الحفاظ على اللغة والتنسيق الحاليين.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        :lang(ar) {
+            font-family: 'Tajawal', sans-serif;
+        }
+        :lang(en) {
+            font-family: 'Readex Pro', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: auto;
+            max-height: 450px;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #a8a29e; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #78716c; }
+        
+        .nav-item { transition: all 0.2s ease-in-out; }
+        html[dir="rtl"] .nav-item:hover { transform: translateX(-2px); }
+        html[dir="ltr"] .nav-item:hover { transform: translateX(2px); }
+        
+        .active-nav { background-color: #f59e0b; color: #1e293b; }
+        html[dir="rtl"] .active-nav { border-right: 4px solid #d97706; }
+        html[dir="ltr"] .active-nav { border-left: 4px solid #d97706; }
+
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; }
+        
+        .layout-tab.active {
+            border-color: #f59e0b;
+            background-color: #fffbeb;
+            color: #b45309;
+        }
+        #lightbox {
+            background-color: rgba(0, 0, 0, 0.8);
+            transition: opacity 0.3s ease-in-out;
+        }
+        #lightbox img {
+            max-width: 90vw;
+            max-height: 90vh;
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-stone-50">
+    <div id="lightbox" class="hidden fixed inset-0 z-50 flex items-center justify-center" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="Enlarged layout" class="rounded-lg shadow-2xl">
+    </div>
+
+    <div class="flex h-screen bg-stone-100">
+        <!-- Sidebar -->
+        <aside class="w-72 flex-shrink-0 bg-slate-800 text-white flex flex-col shadow-2xl">
+            <div class="h-24 flex items-center justify-center bg-slate-900 shadow-md px-4">
+                 <h1 class="text-xl font-bold text-center text-amber-400" data-translate="app_title">خطة الطوارئ التفاعلية<br><span class="text-white font-normal text-base" data-translate="app_subtitle">شركة ريم للبطاريات</span></h1>
+            </div>
+            
+            <div class="px-4 py-3 border-b border-t border-slate-700 space-y-2">
+                <button onclick="toggleLanguage()" class="w-full bg-slate-700 hover:bg-slate-600 text-amber-300 font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                    <span id="lang-toggle-icon" class="text-lg">🇬🇧</span>
+                    <span id="lang-toggle-text" class="mx-2" data-translate="toggle_lang_btn">Switch to English</span>
+                </button>
+                <button id="download-pdf-btn" onclick="downloadPDF()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                    <svg class="w-5 h-5 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span data-translate="download_pdf_btn">تنزيل PDF</span>
+                </button>
+            </div>
+
+            <nav id="main-nav" class="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
+            </nav>
+
+            <footer class="p-4 mt-auto border-t border-slate-700 text-center text-xs text-slate-400">
+                <p data-translate="footer_contact">للتواصل</p>
+                <a href="mailto:Khalfan600059@gmail.com" class="hover:text-amber-300">Khalfan600059@gmail.com</a>
+            </footer>
+        </aside>
+
+        <!-- Main content -->
+        <main id="main-content" class="flex-1 overflow-y-auto p-6 md:p-8 lg:p-10">
+            
+            <section id="dashboard" class="content-section">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6" data-translate="s0_title">المبادئ الأساسية لخطة الطوارئ</h2>
+                <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s0_intro_title">المقدمة والأهداف</h3>
+                    <p class="text-stone-700 leading-relaxed mb-6" data-translate="s0_intro_p">تلتزم شركة ريم للبطاريات ومعدات الطاقة بتوفير بيئة عمل آمنة وصحية. تم إعداد هذه الخطة لضمان تدخل سريع وفعال لمواجهة جميع الحالات الطارئة، حمايةً للأرواح والممتلكات، وتقليلاً للخسائر، وإعادة الأوضاع إلى حالتها الطبيعية في أسرع وقت ممكن.</p>
+                    <div id="objectives-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s0_legal_title">المادة القانونية</h3>
+                    <p class="text-stone-700 leading-relaxed" data-translate="s0_legal_p">تم إعداد هذه الخطة استنادًا إلى قانون الدفاع المدني الصادر بالمرسوم السلطاني رقم (٧٦/٩١) وتعديلاته، والقرار رقم (٢١/٦٣) بشأن لائحة تدابير الدفاع المدني.</p>
+                    <div class="mt-4 space-y-4">
+                        <div class="bg-stone-50 p-4 rounded-lg border-r-4 border-l-0 border-amber-500"><h4 class="font-bold text-slate-700" data-translate="s0_legal_a1_title">مادة رقم (١)</h4><p class="text-sm text-stone-600 mt-2" data-translate="s0_legal_a1_p">على الإدارات المسؤولة عن المرافق العامة والمنشآت الحيوية والمؤسسات والشركات تنفيذ خطط وتدابير الدفاع المدني بالتنسيق مع الإدارة العامة للدفاع المدني.</p></div>
+                        <div class="bg-stone-50 p-4 rounded-lg border-r-4 border-l-0 border-amber-500"><h4 class="font-bold text-slate-700" data-translate="s0_legal_a2_title">مادة رقم (٢)</h4><p class="text-sm text-stone-600 mt-2" data-translate="s0_legal_a2_p">على الجهات المسؤولة تعيين مسؤول لأعمال الأمن والسلامة يكون مؤهلاً وخبيراً لأداء هذه المهام.</p></div>
+                    </div>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s0_def_title">التعاريف الأساسية</h3>
+                    <div class="space-y-2" id="definitions-accordion-container"></div>
+                </div>
+            </section>
+
+            <section id="facility-data" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6" data-translate="s1_title">بيانات المنشأة والمخاطر المحتملة</h2>
+                <div class="bg-white p-6 rounded-xl shadow-lg mb-6">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s1_data_title">بيانات المنشأة</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between border-b pb-2"><span class="font-semibold text-stone-600" data-translate="s1_data_name_label">اسم المنشأة:</span><span class="text-slate-800" data-translate="s1_data_name_value">شركة ريم للبطاريات ومعدات الطاقة ش.م.ع.م</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="font-semibold text-stone-600" data-translate="s1_data_loc_label">الموقع:</span><span class="text-slate-800" data-translate="s1_data_loc_value">منطقة الرسيل الصناعية، سلطنة عُمان</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="font-semibold text-stone-600" data-translate="s1_data_activity_label">طبيعة العمل:</span><span class="text-slate-800" data-translate="s1_data_activity_value">تصنيع وتخزين وتجارة البطاريات</span></div>
+                    </div>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s1_risks_title">مكامن الخطورة داخل المنشأة (حسب الأقسام)</h3>
+                    <div id="risks-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+            </section>
+            
+            <section id="teams" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6" data-translate="s2_title">الهيكل التنظيمي والفرق</h2>
+                <p class="text-stone-600 mb-8" data-translate="s2_p">تعرف على الهيكل التنظيمي لإدارة الطوارئ والقوائم الكاملة لأعضاء الفرق المختلفة لضمان التواصل الفعال أثناء الطوارئ.</p>
+                 <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s2_org_title">الهيكل التنظيمي لإدارة الطوارئ</h3>
+                     <div class="text-center p-4">
+                        <div class="inline-block bg-blue-600 text-white p-4 rounded-lg shadow-lg" data-translate="s2_org_l1">المشرف العام (الرئيس التنفيذي)</div>
+                        <div class="h-8 border-l-2 border-stone-400 mx-auto w-0"></div>
+                        <div class="inline-block bg-amber-500 text-black p-4 rounded-lg shadow-lg" data-translate="s2_org_l2">مسؤول الأمن والسلامة</div>
+                        <div class="h-8 border-l-2 border-stone-400 mx-auto w-0"></div>
+                        <div class="h-8 w-1/2 border-t-2 border-stone-400 mx-auto"></div>
+                        <div class="flex justify-around"><div class="h-8 border-l-2 border-stone-400"></div><div class="h-8 border-l-2 border-stone-400"></div><div class="h-8 border-l-2 border-stone-400"></div><div class="h-8 border-l-2 border-stone-400"></div></div>
+                        <div id="teams-structure-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s2_lists_title">قوائم أعضاء الفرق</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6" id="team-lists-container"></div>
+                </div>
+            </section>
+
+            <section id="responsibilities" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6" data-translate="s3_title">الواجبات والمسؤوليات التفصيلية</h2>
+                <p class="text-stone-600 mb-8" data-translate="s3_p">تفصيل دقيق للمسؤوليات الموكلة لكل دور في المنشأة، من الإدارة العليا إلى الموظفين، لضمان استجابة منظمة وفعالة.</p>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="space-y-2" id="roles-accordion-container"></div>
+                </div>
+            </section>
+            
+            <section id="activation" class="content-section hidden">
+                 <h2 class="text-3xl font-bold text-slate-800 mb-6" data-translate="s4_title">آلية تفعيل الخطة وإجراءات الطوارئ</h2>
+                 <p class="text-stone-600 mb-8" data-translate="s4_p">تسلسل الإجراءات المتبعة عند وقوع حالة طارئة، بدءاً من لحظة الاكتشاف وحتى تسليم الموقع للجهات المختصة، بالإضافة إلى الإجراءات التفصيلية لكل نوع من الطوارئ.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s4_phase1_title">المرحلة الأولى: قبل وصول فرق الدفاع المدني</h3>
+                        <ol id="phase1-steps" class="relative border-r-2 border-l-0 border-stone-200 ms-4"></ol>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s4_phase2_title">المرحلة الثانية: بعد وصول فرق الدفاع المدني</h3>
+                         <ol id="phase2-steps" class="relative border-r-2 border-l-0 border-stone-200 ms-4"></ol>
+                     </div>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s4_procedures_title">الإجراءات التفصيلية حسب نوع الطارئ</h3>
+                    <div class="border-b border-stone-200">
+                        <nav class="-mb-px flex gap-x-6" id="risk-tabs"></nav>
+                    </div>
+                    <div id="fire-emergency" class="tab-content mt-6"><div class="space-y-4 text-sm" id="fire-procedures"></div></div>
+                    <div id="medical-emergency" class="tab-content mt-6 hidden"><div class="space-y-4 text-sm" id="medical-procedures"></div></div>
+                    <div id="environmental-emergency" class="tab-content mt-6 hidden"><div class="space-y-4 text-sm" id="environmental-procedures"></div></div>
+                </div>
+            </section>
+            
+            <section id="equipment" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6" data-translate="s5_title">الأنظمة والمعدات</h2>
+                <p class="text-stone-600 mb-8" data-translate="s5_p">تفاصيل حول أنظمة السلامة ومعدات الطوارئ المتوفرة في المنشأة، بما في ذلك أنواعها، أعدادها، وجداول الفحص الدوري لضمان جاهزيتها الدائمة.</p>
+                <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s5_extinguisher_title">تفاصيل معدات إطفاء الحريق</h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                        <div class="lg:col-span-3">
+                            <h4 class="text-lg font-semibold text-slate-700 mb-4 text-center" data-translate="s5_extinguisher_chart_title">توزيع طفايات الحريق اليدوية</h4>
+                            <div class="chart-container"><canvas id="fireExtinguisherChart"></canvas></div>
+                        </div>
+                        <div id="extinguisher-types" class="lg:col-span-2 space-y-3"></div>
+                    </div>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+                     <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s5_inspection_title">جدول الفحص الدوري للمعدات</h3>
+                     <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-stone-200">
+                            <thead class="bg-stone-50"><tr id="inspection-table-head"></tr></thead>
+                            <tbody class="bg-white divide-y divide-stone-200" id="inspection-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                     <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s5_alarm_title">معلومات نظام إنذار الحريق</h3>
+                     <ul id="alarm-system-info" class="list-disc list-inside text-stone-700 space-y-2"></ul>
+                </div>
+            </section>
+            
+            <section id="evacuation" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6" data-translate="s6_title">طرق الإخلاء والمخططات</h2>
+                <p class="text-stone-600 mb-8" data-translate="s6_p">تحتوي هذه الصفحة على التعليمات الأساسية لعملية الإخلاء، واجبات الأفراد، ومواقع نقاط التجمع الآمنة والمخططات التوضيحية للمنشأة.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s6_instructions_title">تعليمات الإخلاء لجميع الموظفين 📋</h3>
+                        <ol id="evacuation-instructions" class="list-decimal list-inside text-stone-700 space-y-3"></ol>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s6_assembly_points_title">نقاط التجمع الآمنة 📍</h3>
+                         <div id="assembly-points" class="space-y-4"></div>
+                     </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg mt-6">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s6_layouts_title">مخططات المنشأة</h3>
+                    <p class="text-stone-600 mb-4" data-translate="s6_layouts_p">يجب إرفاق المخططات بحجم A3 حسب متطلبات الدفاع المدني. المخططات توضح مسارات الإخلاء، مواقع معدات الإطفاء، ونقاط التجمع.</p>
+                     <div class="border-b border-stone-200 mb-4">
+                        <nav class="-mb-px flex gap-x-4 overflow-x-auto" id="layout-tabs"></nav>
+                    </div>
+                    <div id="layout-images" class="bg-stone-100 p-2 rounded-lg">
+                        <img id="layout-image-display" src="" alt="Layout Plan" class="w-full h-auto rounded-md cursor-pointer" onclick="openLightbox(this.src)">
+                    </div>
+                </div>
+            </section>
+            
+            <section id="policies" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6" data-translate="s8_title">السياسات والإجراءات الإدارية</h2>
+                <p class="text-stone-600 mb-8" data-translate="s8_p">ملخص للسياسات والإجراءات الإدارية الرئيسية المتعلقة بالصحة والسلامة المهنية في الشركة.</p>
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s8_policy_title">📜 سياسة السلامة والصحة المهنية</h3>
+                        <ul id="safety-policy-list" class="list-disc list-inside text-stone-700 space-y-2 mt-4"></ul>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s8_investigation_title">🕵️ إجراءات التحقيق في الحوادث</h3>
+                         <ol id="investigation-steps" class="list-decimal list-inside text-stone-700 space-y-2 mt-4"></ol>
+                    </div>
+                </div>
+            </section>
+
+            <section id="contacts" class="content-section hidden">
+                 <h2 class="text-3xl font-bold text-slate-800 mb-6" data-translate="s7_title">أرقام هواتف الطوارئ</h2>
+                 <p class="text-stone-600 mb-8" data-translate="s7_p">قائمة محدثة بأهم أرقام الاتصال الداخلية والخارجية لاستخدامها في حالات الطوارئ.</p>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div class="bg-white p-6 rounded-xl shadow-lg"><h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s7_external_title">الجهات الخارجية</h3><div id="external-contacts-container" class="space-y-3"></div></div>
+                      <div class="bg-white p-6 rounded-xl shadow-lg"><h3 class="text-xl font-bold text-slate-800 mb-4" data-translate="s7_internal_title">المعنيون بالمنشأة</h3><div id="internal-contacts-container" class="space-y-3"></div></div>
+                 </div>
+            </section>
+        </main>
+    </div>
+    <script>
+        // Language and Data Store
+        let currentLanguage = 'ar';
+        let fireExtinguisherChart;
+
+        const translations = {
+            app_title: { ar: "خطة الطوارئ التفاعلية", en: "Interactive Emergency Plan" },
+            app_subtitle: { ar: "شركة ريم للبطاريات", en: "Reem Batteries & Power Appliances" },
+            toggle_lang_btn: { ar: "Switch to English", en: "التبديل إلى العربية" },
+            download_pdf_btn: { ar: "تنزيل PDF", en: "Download PDF" },
+            footer_contact: { ar: "للتواصل", en: "Contact" },
+            nav_items: [
+                { id: 'dashboard', icon: '⚖️', text: { ar: "المبادئ الأساسية", en: "Core Principles" } },
+                { id: 'facility-data', icon: '🏢', text: { ar: "بيانات المنشأة والمخاطر", en: "Facility Data & Risks" } },
+                { id: 'teams', icon: '👥', text: { ar: "الهيكل التنظيمي والفرق", en: "Structure & Teams" } },
+                { id: 'responsibilities', icon: '📝', text: { ar: "الواجبات والمسؤوليات", en: "Duties & Responsibilities" } },
+                { id: 'activation', icon: '⚙️', text: { ar: "آلية تفعيل الخطة", en: "Plan Activation" } },
+                { id: 'equipment', icon: '🧯', text: { ar: "الأنظمة والمعدات", en: "Systems & Equipment" } },
+                { id: 'evacuation', icon: '🚶', text: { ar: "طرق الإخلاء والمخططات", en: "Evacuation & Layouts" } },
+                { id: 'contacts', icon: '📞', text: { ar: "أرقام الهواتف", en: "Contact Numbers" } },
+                { id: 'policies', icon: '📜', text: { ar: "السياسات والإجراءات", en: "Policies & Procedures" } }
+            ],
+            s0_title: { ar: "المبادئ الأساسية لخطة الطوارئ", en: "Core Principles of the Emergency Plan" },
+            s0_intro_title: { ar: "المقدمة والأهداف", en: "Introduction & Objectives" },
+            s0_intro_p: {
+                ar: "تلتزم شركة ريم للبطاريات ومعدات الطاقة بتوفير بيئة عمل آمنة وصحية. تم إعداد هذه الخطة لضمان تدخل سريع وفعال لمواجهة جميع الحالات الطارئة، حمايةً للأرواح والممتلكات، وتقليلاً للخسائر، وإعادة الأوضاع إلى حالتها الطبيعية في أسرع وقت ممكن.",
+                en: "Reem Batteries & Power Appliances Co. is committed to providing a safe and healthy work environment. This plan has been developed to ensure a rapid and effective response to all emergencies, to protect lives and property, reduce losses, and restore conditions to normal as quickly as possible."
+            },
+            objectives: [
+                { icon: '🛡️', title: { ar: "حماية الأرواح والممتلكات", en: "Protect Lives & Property" }, p: { ar: "تقليل الخسائر البشرية والمادية إلى أدنى حد ممكن.", en: "Minimize human and material losses to the lowest possible extent." } },
+                { icon: '🚨', title: { ar: "الاستعداد التام", en: "Full Readiness" }, p: { ar: "مواجهة كافة الحوادث والاحتمالات المتوقعة في المنشأة.", en: "Confront all expected accidents and possibilities in the facility." } },
+                { icon: '📋', title: { ar: "تحديد الأدوار", en: "Define Roles" }, p: { ar: "تحديد مهام العاملين بوضوح عند تفعيل خطة الطوارئ.", en: "Clearly define employee tasks when the emergency plan is activated." } }
+            ],
+            s0_legal_title: { ar: "المادة القانونية", en: "Legal Article" },
+            s0_legal_p: {
+                ar: "تم إعداد هذه الخطة استنادًا إلى قانون الدفاع المدني الصادر بالمرسوم السلطاني رقم (٧٦/٩١) وتعديلاته، والقرار رقم (٢١/٦٣) بشأن لائحة تدابير الدفاع المدني.",
+                en: "This plan has been prepared based on the Civil Defense Law issued by Royal Decree No. (76/91) and its amendments, and Resolution No. (21/63) regarding civil defense measures."
+            },
+            s0_legal_a1_title: { ar: "مادة رقم (١)", en: "Article (1)" },
+            s0_legal_a1_p: {
+                ar: "على الإدارات المسؤولة عن المرافق العامة والمنشآت الحيوية والمؤسسات والشركات تنفيذ خطط وتدابير الدفاع المدني بالتنسيق مع الإدارة العامة للدفاع المدني.",
+                en: "The responsible administrations of public facilities, vital installations, institutions, and companies must implement civil defense plans and measures in coordination with the General Directorate of Civil Defense."
+            },
+            s0_legal_a2_title: { ar: "مادة رقم (٢)", en: "Article (2)" },
+            s0_legal_a2_p: {
+                ar: "على الجهات المسؤولة تعيين مسؤول لأعمال الأمن والسلامة يكون مؤهلاً وخبيراً لأداء هذه المهام.",
+                en: "The responsible authorities must appoint a qualified and experienced security and safety official to perform these tasks."
+            },
+            s0_def_title: { ar: "التعاريف الأساسية", en: "Key Definitions" },
+            definitions: [
+                { term: { ar: "خطة الطوارئ والإخلاء", en: "Emergency & Evacuation Plan" }, definition: { ar: "هي مجموعة من الإجراءات والتدابير الوقائية المعدة مسبقًا والمتفق عليها لمواجهة حالات الطوارئ.", en: "A set of preventive measures prepared in advance to confront emergencies and disasters." } },
+                { term: { ar: "مسؤول الأمن والسلامة", en: "Security & Safety Officer" }, definition: { ar: "هو الشخص المؤهل والمعني بتقييم المخاطر ووضع السياسات الأمنية بالمنشأة وإعداد خطط الطوارئ.", en: "The qualified person concerned with assessing risks, setting security policies, and preparing emergency plans." } },
+                { term: { ar: "فرق الأمن والسلامة", en: "Security & Safety Teams" }, definition: { ar: "هي الفرق المعنية التي يتم تشكيلها للتعامل الأولي مع الحالات الطارئة لحين وصول الجهات المعنية.", en: "The designated teams formed to handle initial responses to emergencies until the arrival of relevant authorities." } },
+                { term: { ar: "نقطة التجمع", en: "Assembly Point" }, definition: { ar: "هو المكان الآمن الذي تم تحديده مسبقًا ويتم إخلاء الأشخاص إليه في الحالات الطارئة.", en: "The safe place determined in advance to which people are evacuated in emergencies." } }
+            ],
+            s1_title: { ar: "بيانات المنشأة والمخاطر المحتملة", en: "Facility Data & Potential Risks" },
+            s1_data_title: { ar: "بيانات المنشأة", en: "Facility Data" },
+            s1_data_name_label: { ar: "اسم المنشأة:", en: "Facility Name:" },
+            s1_data_name_value: { ar: "شركة ريم للبطاريات ومعدات الطاقة ش.م.ع.م", en: "Reem Batteries & Power Appliances Co SAOC" },
+            s1_data_loc_label: { ar: "الموقع:", en: "Location:" },
+            s1_data_loc_value: { ar: "منطقة الرسيل الصناعية، سلطنة عُمان", en: "Rusayl Industrial Area, Sultanate of Oman" },
+            s1_data_activity_label: { ar: "طبيعة العمل:", en: "Nature of Business:" },
+            s1_data_activity_value: { ar: "تصنيع وتخزين وتجارة البطاريات", en: "Manufacturing, storage, and trading of batteries" },
+            s1_risks_title: { ar: "مكامن الخطورة داخل المنشأة (حسب الأقسام)", en: "Potential Risks within the Facility (by Department)" },
+            risks: [
+                { dept: { ar: "قسم صناعة الألواح", en: "Plate Making Dept." }, risk: { ar: "حريق، صعق كهربائي، مواد كيميائية، حوادث رافعات شوكية.", en: "Fire, Electrocution, Chemical, Fork Lift accidents." } },
+                { dept: { ar: "قسم القولبة بالحقن", en: "Injection Molding Dept." }, risk: { ar: "حريق، صعق كهربائي، قوالب ثقيلة، حوادث رافعات شوكية.", en: "Fire, Electrocution, Heavy Molds, Fork Lift accidents." } },
+                { dept: { ar: "قسم التجميع", en: "Assembly Dept." }, risk: { ar: "حريق، صعق كهربائي، حوادث رافعات شوكية.", en: "Fire, Electrocution, Fork Lift accidents." } },
+                { dept: { ar: "قسم الشحن الرطب والفحص", en: "Wet Charging & PDI Dept." }, risk: { ar: "حريق، صعق كهربائي، مواد كيميائية (حمض).", en: "Fire, Electrocution, Chemical (Acid)." } },
+                { dept: { ar: "المستودعات", en: "Warehouses" }, risk: { ar: "حريق، صعق كهربائي، مواد كيميائية، حوادث رافعات شوكية.", en: "Fire, Electrocution, Chemical, Fork Lift accidents." } }
+            ],
+            s2_title: { ar: "الهيكل التنظيمي والفرق", en: "Organizational Structure & Teams" },
+            s2_p: { ar: "تعرف على الهيكل التنظيمي لإدارة الطوارئ والقوائم الكاملة لأعضاء الفرق المختلفة لضمان التواصل الفعال أثناء الطوارئ.", en: "Learn about the emergency management structure and the full lists of various team members to ensure effective communication during emergencies." },
+            s2_org_title: { ar: "الهيكل التنظيمي لإدارة الطوارئ", en: "Emergency Management Structure" },
+            s2_org_l1: { ar: "المشرف العام (الرئيس التنفيذي)", en: "Overall Supervisor (CEO)" },
+            s2_org_l2: { ar: "مسؤول الأمن والسلامة", en: "Security & Safety Officer" },
+            teams_structure: [
+                { icon: '👨‍🚒', name: { ar: "فريق الإطفاء", en: "Firefighting Team" } },
+                { icon: '🚶‍♂️', name: { ar: "فريق الإخلاء", en: "Evacuation Team" } },
+                { icon: '🧑‍⚕️', name: { ar: "فريق الإسعاف", en: "First Aid Team" } },
+                { icon: '🔧', name: { ar: "فريق الصيانة", en: "Maintenance Team" } }
+            ],
+            s2_lists_title: { ar: "قوائم أعضاء الفرق", en: "Team Member Lists" },
+            teams: [
+                { name: {ar: "فريق الأمن والسلامة", en: "Security & Safety Team"}, members: [
+                    { name: "Brijendra Swarup", role: { ar: "رئيس (السلامة والبيئة والتدريب)", en: "Head (HSE & Training)" }, phone: "99232776" },
+                    { name: "Khalfan Rashid Al Habsi", role: { ar: "فني (الصحة والسلامة والبيئة)", en: "HSE - Technician" }, phone: "91115835" }
+                ]},
+                { name: {ar: "فريق الإطفاء والإخلاء", en: "Fire Warden & Evacuation Team"}, members: ["Nasser Mubarak Hamed Al Baluchi", "Abdul Sattar Darwish Hassan Al Baluchi", "Ahmed Abdullah Nasser Al Mawali", "Brijendra Swarup", "Khalfan Rashid Khalfan Obaid Al Habsi", "Mohd Salim Said Al Omairi", "Kumaresh Yuvaraj", "Muthalagan Kannan", "Balbeer Singh Mehta", "Vijayan Karumandiyil", "Ali Mabrook Ahmed Al Baluchi", "Moonnonnil Eappen Jexon", "Saleh Abdullah Harib Al Khamisi", "Nasser Salim Rashid Al Shiyadi"] },
+                { name: {ar: "فريق الإسعافات الأولية", en: "First Aid Team"}, members: ["Ibrahim Issa Ibrahim Al Baluchi", "Dilip Kumar Samanta", "Chandra Sekaran Paranji", "Brijendra Swarup", "Khalfan Rashid Khalfan Obaid Al Habsi", "Talal Ali Ahmed Al Saadi", "Darwish Nasser Salim Al Owaisi", "Sojan Joseph", "Noodana Murugan Radhakrishana", "Vijayan Karumandiyil", "Ali Mabrook Ahmed Al Baluchi", "Moonnonnil Eappen Jexon", "Sanjay Kumar Yadav", "Nasser Salim Rashid Al Shiyadi"] },
+                { name: {ar: "فريق الصيانة", en: "Maintenance Team"}, members: [{name:"Satyashil Salve", phone:"96733140"}, {name:"Rakesh Deshmukh", phone:"92290296"}, {name:"Santosh Kumar", phone:"94210123"}] }
+            ],
+            s3_title: { ar: "الواجبات والمسؤوليات التفصيلية", en: "Detailed Duties & Responsibilities" },
+            s3_p: { ar: "تفصيل دقيق للمسؤوليات الموكلة لكل دور في المنشأة، من الإدارة العليا إلى الموظفين، لضمان استجابة منظمة وفعالة.", en: "A detailed breakdown of the responsibilities assigned to each role in the facility, from senior management to employees, to ensure an organized and effective response." },
+            roles: [
+                { role: {ar: "جميع الموظفين", en: "All Employees"}, duties: { ar: ["إطلاق الإنذار عند اكتشاف حريق.", "مكافحة الحريق الأولي إذا كان آمنًا.", "إيقاف الآلات والتوجه لنقطة التجمع بأمان."], en: ["Activate the alarm upon discovering a fire.", "Fight the initial fire only if it is safe.", "Stop machinery and proceed safely to the assembly point."] } },
+                { role: {ar: "فريق الإطفاء", en: "Fire Team"}, duties: { ar: ["ارتداء السترة المخصصة.", "التوجه إلى لوحة إنذار الحريق لتلقي التعليمات.", "الاستجابة لموقع الحريق والتعامل معه إذا كان آمنًا."], en: ["Wear the designated jacket.", "Report to the fire alarm panel for instructions.", "Respond to the fire scene and deal with it if safe."] } },
+                { role: {ar: "فريق الإسعافات الأولية", en: "First Aid Team"}, duties: { ar: ["أخذ حقيبة الإسعافات الأولية والنقالة إلى موقع الحادث.", "توفير الإسعافات الأولية وتقييم الإصابات.", "المساعدة في اتخاذ قرار نقل المصاب للمستشفى."], en: ["Take the first aid kit and stretcher to the scene.", "Provide first aid and assess injuries.", "Assist in the decision to move the injured for medical help."] } }
+            ],
+            s4_title: { ar: "آلية تفعيل الخطة وإجراءات الطوارئ", en: "Plan Activation & Emergency Procedures" },
+            s4_p: { ar: "تسلسل الإجراءات المتبعة عند وقوع حالة طارئة، بدءاً من لحظة الاكتشاف وحتى تسليم الموقع للجهات المختصة، بالإضافة إلى الإجراءات التفصيلية لكل نوع من الطوارئ.", en: "The sequence of actions to be taken when an emergency occurs, from the moment of discovery to handing over the site to the competent authorities, in addition to detailed procedures for each type of emergency." },
+            s4_phase1_title: { ar: "المرحلة الأولى: قبل وصول فرق الدفاع المدني", en: "Phase 1: Before Civil Defence Arrival" },
+            phase1_steps: [
+                { title: { ar: "التفعيل والاستجابة", en: "Activation & Response" }, p: { ar: "تنشيط غرفة التحكم، تحديد موقع الحادث، وإرسال الفرق الداخلية.", en: "Activate control room, identify incident location, dispatch internal teams." } },
+                { title: { ar: "الاتصال والإخلاء", en: "Contact & Evacuation" }, p: { ar: "الاتصال برقم الطوارئ (9999) والبدء في إخلاء الأفراد لنقاط التجمع.", en: "Call emergency number (9999) and begin evacuating personnel to assembly points." } }
+            ],
+            s4_phase2_title: { ar: "المرحلة الثانية: بعد وصول فرق الدفاع المدني", en: "Phase 2: After Civil Defence Arrival" },
+            phase2_steps: [
+                { title: { ar: "تقديم الإيجاز", en: "Briefing" }, p: { ar: "تقديم موجز كامل عن الحادث (نوعه، موقعه، حجمه، عدد المصابين).", en: "Provide a full brief on the incident (type, location, scale, number of casualties)." } },
+                { title: { ar: "تسليم القيادة", en: "Handover of Command" }, p: { ar: "تسليم قيادة الموقع الميدانية لفرق الهيئة وتقديم الدعم الكامل.", en: "Hand over field command to the authority's teams and provide full support." } }
+            ],
+            s4_procedures_title: { ar: "الإجراءات التفصيلية حسب نوع الطارئ", en: "Detailed Procedures by Emergency Type" },
+            risk_tabs: [
+                { id: 'fire-emergency', icon: '🔥', text: { ar: "طوارئ الحريق", en: "Fire Emergency" } },
+                { id: 'medical-emergency', icon: '🚑', text: { ar: "طوارئ طبية", en: "Medical Emergency" } },
+                { id: 'environmental-emergency', icon: '🌿', text: { ar: "طوارئ بيئية", en: "Environmental Emergency" } }
+            ],
+            procedures_fire: [
+                { title: {ar:'عند اكتشاف حريق', en:'On Discovery of a Fire'}, steps: {ar: ['قم بتشغيل الإنذار.', 'كافح الحريق إذا كان آمنًا.', 'اتبع تعليمات مراقبي الحريق.'], en:['Turn on the alarm.', 'Fight the fire if safe to do so.', 'Follow instructions from Fire Wardens.']} },
+                { title: {ar:'عند سماع الإنذار', en:'On Hearing the Alarm'}, steps: {ar: ['أوقفوا الآلات وتوجهوا لنقطة التجمع.', 'يؤمن موظفو المكاتب أعمالهم ويتوجهون لنقطة التجمع.'], en:['Stop machines and walk safely towards the assembly point.', 'Office staff are to secure their work and walk safely to the assembly point.']} }
+            ],
+            procedures_medical: [
+                { title: {ar:'مستويات الاستجابة', en:'Levels of Response'}, steps: {ar: ['المستوى 1 (وفاة): إبلاغ الشرطة والإدارة.', 'المستوى 2 (إصابة خطيرة): إبلاغ مدير الاستجابة والشرطة.', 'المستوى 3 (إسعاف أولي): يتم في الموقع.'], en:['Level 1 (Fatality): Inform Police and senior management.', 'Level 2 (Serious Injury): Inform Duty Response Manager and Police.', 'Level 3 (First Aid): Must be done at the work site.']} },
+                { title: {ar:'واجبات فريق الإسعافات الأولية', en:'First Aid Team Duties'}, steps: {ar: ['تلقي طلب المساعدة.', 'أخذ حقيبة الإسعافات الأولية للموقع.', 'تقييم الإصابات وتقديم المشورة.'], en:['Receive a request for assistance.', 'Take the First Aid kit to the scene.', 'Assess the injuries and advise on further action.']} }
+            ],
+            procedures_environmental: [
+                { title: {ar:'تسرب غاز', en:'Gas Leakage'}, steps: {ar: ['تحذير الآخرين.', 'إبلاغ مسؤول المناوبة.', 'عزل التسرب وإغلاق الصمام إن أمكن.'], en:['Warn the others.', 'Inform the nearest Shift-in-charge.', 'Isolate the leakage and turn off the valve if possible.']} },
+                { title: {ar:'انسكاب مواد كيميائية', en:'Chemicals Substances Leakage'}, steps: {ar: ['طلب المساعدة الفورية.', 'غسل المنطقة المصابة بالماء النظيف.', 'استخدام عدة احتواء الانسكاب (Spill Kit).'], en:['Ask for immediate assistance.', 'Wash with fresh water on the affected area.', 'Use spill kit (if required).']} }
+            ],
+            s5_title: { ar: "الأنظمة والمعدات", en: "Systems & Equipment" },
+            s5_p: { ar: "تفاصيل حول أنظمة السلامة ومعدات الطوارئ المتوفرة في المنشأة، بما في ذلك أنواعها، أعدادها، وجداول الفحص الدوري لضمان جاهزيتها الدائمة.", en: "Details about the safety systems and emergency equipment available in the facility, including their types, quantities, and periodic inspection schedules to ensure their constant readiness." },
+            s5_extinguisher_title: { ar: "تفاصيل معدات إطفاء الحريق", en: "Fire Fighting Equipment Details" },
+            s5_extinguisher_chart_title: { ar: "توزيع طفايات الحريق اليدوية", en: "Distribution of Manual Fire Extinguishers" },
+            extinguisher_types: [
+                { name: { ar: "طفاية الرغوة (Foam)", en: "Foam Extinguisher" }, use: { ar: "تستخدم لحرائق السوائل القابلة للاشتعال مثل الزيوت والشحوم.", en: "Used for flammable liquid fires like oils and grease." } },
+                { name: { ar: "طفاية ثاني أكسيد الكربون (CO2)", en: "CO2 Extinguisher" }, use: { ar: "تستخدم لحرائق المعدات والأجهزة الكهربائية.", en: "Used for electrical equipment and device fires." } },
+                { name: { ar: "طفاية البودرة الجافة (Dry Powder)", en: "Dry Powder Extinguisher" }, use: { ar: "متعددة الاستخدامات، تصلح لمختلف أنواع الحرائق.", en: "Multi-purpose, suitable for various types of fires." } },
+                { name: { ar: "طفاية الماء (Water)", en: "Water Extinguisher" }, use: { ar: "تستخدم لحرائق المواد الصلبة مثل الأخشاب والورق.", en: "Used for solid material fires like wood and paper." } }
+            ],
+            s5_inspection_title: { ar: "جدول الفحص الدوري للمعدات", en: "Periodic Equipment Inspection Schedule" },
+            inspection_headers: { ar: ["المعدة / النظام", "تكرار الفحص", "الجهة المسؤولة"], en: ["Equipment / System", "Frequency", "Responsible Body"] },
+            inspection_rows: [
+                { cells: { ar: ["نظام إنذار الحريق", "كل 3 أشهر", "شركة معتمدة"], en: ["Fire Alarm System", "Every 3 months", "Certified Company"] } },
+                { cells: { ar: ["طفايات الحريق", "شهرياً (داخلي)", "فني السلامة"], en: ["Fire Extinguishers", "Monthly (Internal)", "Safety Technician"] } },
+                { cells: { ar: ["مصابيح الطوارئ", "شهرياً", "فريق الصيانة"], en: ["Emergency Lights", "Monthly", "Maintenance Team"] } }
+            ],
+            s5_alarm_title: { ar: "معلومات نظام إنذار الحريق", en: "Fire Alarm System Information" },
+            alarm_system_info: [
+                { ar: "<strong>غرفة التحكم (العمليات):</strong> تقع عند المدخل الرئيسي وتعمل على مدار 24 ساعة.", en: "<strong>Control Room (Operations):</strong> Located at the main entrance, operates 24/7." },
+                { ar: "<strong>محتويات الغرفة:</strong> لوحة تحكم رئيسية، شاشات مراقبة، نظام اتصال.", en: "<strong>Room Contents:</strong> Main alarm control panel, monitoring screens, communication system." },
+                { ar: "<strong>لوحة التكرار المساعدة:</strong> مكتب الصيانة.", en: "<strong>Auxiliary Repeater Panel:</strong> Maintenance office." }
+            ],
+            s6_title: { ar: "طرق الإخلاء والمخططات", en: "Evacuation Routes & Layouts" },
+            s6_p: { ar: "تحتوي هذه الصفحة على التعليمات الأساسية لعملية الإخلاء، واجبات الأفراد، ومواقع نقاط التجمع الآمنة والمخططات التوضيحية للمنشأة.", en: "This page contains the basic instructions for the evacuation process, individual duties, locations of safe assembly points, and illustrative layouts of the facility." },
+            s6_instructions_title: { ar: "تعليمات الإخلاء لجميع الموظفين 📋", en: "Evacuation Instructions for All Employees 📋" },
+            evacuation_instructions: [
+                { ar: "<strong>التحلي بالهدوء</strong> وعدم الارتباك أو الخوف.", en: "<strong>Remain calm</strong> and do not panic or become confused." },
+                { ar: "<strong>إيقاف العمل فورًا</strong> والتوجه إلى نقاط التجمع.", en: "<strong>Stop work immediately</strong> and proceed to the assembly points." },
+                { ar: "<strong>عدم استخدام المصاعد الكهربائية نهائيًا</strong> واستخدام السلالم فقط.", en: "<strong>Never use elevators</strong>; use stairs only." }
+            ],
+            s6_assembly_points_title: { ar: "نقاط التجمع الآمنة 📍", en: "Safe Assembly Points 📍" },
+            assembly_points: [
+                { title: { ar: "نقطة التجمع رقم 1", en: "Assembly Point 1" }, location: { ar: "الموقع: أمام البوابة الرئيسية (داخل مقر المصنع).", en: "Location: In front of the main gate (inside the factory premises)." } },
+                { title: { ar: "نقطة التجمع رقم 2", en: "Assembly Point 2" }, location: { ar: "الموقع: بين المستودعات وقسم الشحن الرطب.", en: "Location: Between the warehouses and the wet charging section." } }
+            ],
+            s6_layouts_title: { ar: "مخططات المنشأة", en: "Facility Layouts" },
+            s6_layouts_p: { ar: "يجب إرفاق المخططات بحجم A3 حسب متطلبات الدفاع المدني.", en: "Layouts must be attached in A3 size as per Civil Defense requirements." },
+            layout_tabs: [
+                { id: 'plant-layout', text: { ar: 'المخطط العام', en: 'Plant Layout' }, src: 'https://www2.0zz0.com/2025/09/10/04/599475278.jpg' },
+                { id: 'ground-floor', text: { ar: 'الطابق الأرضي', en: 'Ground Floor' }, src: 'https://www2.0zz0.com/2025/09/10/04/983802278.jpg' },
+                { id: 'first-floor', text: { ar: 'الطابق الأول', en: 'First Floor' }, src: 'https://www2.0zz0.com/2025/09/10/04/725512056.jpg' },
+                { id: 'plate-making', text: { ar: 'صناعة الألواح', en: 'Plate Making' }, src: 'https://www2.0zz0.com/2025/09/10/04/929650601.jpg' },
+                { id: 'plate-formation', text: { ar: 'تشكيل الألواح', en: 'Plate Formation' }, src: 'https://www2.0zz0.com/2025/09/10/04/994618355.jpg' },
+                { id: 'injection-moulding', text: { ar: 'القولبة بالحقن', en: 'Injection Moulding' }, src: 'https://www2.0zz0.com/2025/09/10/04/727482632.jpg' },
+                { id: 'battery-manufacturing', text: { ar: 'تصنيع البطاريات', en: 'Battery Manufacturing' }, src: 'https://www2.0zz0.com/2025/09/10/04/623778171.jpg' },
+                { id: 'battery-charging', text: { ar: 'شحن البطاريات', en: 'Battery Charging' }, src: 'https://www2.0zz0.com/2025/09/10/04/124029851.jpg' },
+                { id: 'warehouse', text: { ar: 'المستودع', en: 'Warehouse' }, src: 'https://www2.0zz0.com/2025/09/10/04/148262206.jpg' },
+            ],
+            s7_title: { ar: "أرقام هواتف الطوارئ", en: "Emergency Contact Numbers" },
+            s7_p: { ar: "قائمة محدثة بأهم أرقام الاتصال الداخلية والخارجية لاستخدامها في حالات الطوارئ.", en: "An updated list of the most important internal and external contact numbers for use in emergencies." },
+            s7_external_title: { ar: "الجهات الخارجية", en: "External Agencies" },
+            s7_internal_title: { ar: "المعنيون بالمنشأة", en: "Internal Contacts" },
+            s8_title: { ar: "السياسات والإجراءات الإدارية", en: "Administrative Policies & Procedures" },
+            s8_p: { ar: "ملخص للسياسات والإجراءات الإدارية الرئيسية المتعلقة بالصحة والسلامة المهنية في الشركة.", en: "A summary of the main administrative policies and procedures related to occupational health and safety in the company." },
+            s8_policy_title: { ar: "📜 سياسة السلامة والصحة المهنية", en: "📜 OHS Policy" },
+            safety_policy: [
+                { ar: "الالتزام بكافة المراسيم السلطانية والقوانين الوزارية.", en: "Compliance with all Royal Decrees and ministerial laws." },
+                { ar: "تلتزم الإدارة بأن كافة الحوادث يمكن منع وقوعها.", en: "Management is committed that all accidents are preventable." },
+                { ar: "توفير التدريب اللازم للموظفين ليكونوا على دراية بالمخاطر.", en: "Provide necessary training for employees to be aware of risks." }
+            ],
+            s8_investigation_title: { ar: "🕵️ إجراءات التحقيق في الحوادث", en: "🕵️ Accident Investigation Procedures" },
+            investigation_steps: [
+                { ar: "إجراء تحقيق فوري من قبل المسؤول المباشر.", en: "Immediate investigation by the direct supervisor." },
+                { ar: "تعبئة تقرير أولي للحادث ورفعه خلال 24 ساعة.", en: "Complete and submit an initial incident report within 24 hours." },
+                { ar: "رفع تقرير نهائي مفصل خلال 3 أيام يوضح الإجراءات الوقائية.", en: "Submit a final detailed report within 3 days outlining preventive measures." }
+            ],
+            equipment_chart_labels: { ar: ['رغوة', 'ثاني أكسيد الكربون', 'بودرة جافة', 'ماء'], en: ['Foam', 'CO2', 'Dry Powder', 'Water'] },
+            equipment_data: [97, 90, 31, 3],
+            contacts_external: [
+                    { entity: {ar: "الطوارئ", en: "Emergency"}, number: "9999", type: "emergency" },
+                    { entity: {ar: "الدفاع المدني (الرسيل)", en: "Civil Defence (Rusayl)"}, number: "24446726", type: "normal" },
+                    { entity: {ar: "أقرب مستشفى (الرسيل)", en: "Nearest Hospital (Rusayl)"}, number: "24446151", type: "normal" }
+            ],
+            contacts_internal: [
+                { role: {ar: "الرئيس التنفيذي بالإنابة", en: "Acting CEO"}, number: "90993326" },
+                { role: {ar: "نائب المدير العام (الأعمال)", en: "Deputy General Manager (Works)"}, number: "99422380" },
+                { role: {ar: "رئيس (السلامة والبيئة والتدريب)", en: "Head (HSE & Training)"}, number: "99232776" },
+                { role: {ar: "رئيس (الصيانة)", en: "Head (Maintenance)"}, number: "99315053" },
+                { role: {ar: "مدير أول (الإدارة والموارد البشرية)", en: "Sr. Manager (Admin & HR)"}, number: "94190915" },
+                { role: {ar: "مدير (الصيانة)", en: "Manager (Maintenance)"}, number: "96733140" },
+                { role: {ar: "فني (الصحة والسلامة والبيئة)", en: "HSE - Technician"}, number: "91115835" }
+            ]
+        };
+        
+        function updateUI() {
+            const lang = currentLanguage;
+            const dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.lang = lang;
+            document.documentElement.dir = dir;
+
+            document.getElementById('lang-toggle-text').innerText = translations.toggle_lang_btn[lang];
+            document.getElementById('lang-toggle-icon').innerText = lang === 'ar' ? '🇬🇧' : '🇴🇲';
+
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.dataset.translate;
+                if (translations[key] && translations[key][lang]) {
+                    el.innerHTML = translations[key][lang];
+                }
+            });
+
+            const navContainer = document.getElementById('main-nav');
+            const currentActiveId = navContainer.querySelector('.active-nav')?.href.split('#')[1] || 'dashboard';
+            navContainer.innerHTML = '';
+            translations.nav_items.forEach((item, index) => {
+                const navLink = document.createElement('a');
+                navLink.href = `#${item.id}`;
+                navLink.className = `nav-item flex items-center p-3 rounded-lg`;
+                if(item.id === currentActiveId) {
+                    navLink.classList.add('active-nav');
+                }
+                navLink.onclick = (e) => {
+                    e.preventDefault();
+                    showSection(item.id, navLink);
+                };
+                navLink.innerHTML = `<span class="text-lg">${item.icon}</span><span class="mx-3 font-semibold">${item.text[lang]}</span>`;
+                navContainer.appendChild(navLink);
+            });
+            
+            document.getElementById('objectives-grid').innerHTML = translations.objectives.map(obj => `
+                <div class="bg-stone-50 p-4 rounded-lg border">
+                    <h4 class="font-bold text-slate-700">${obj.icon} ${obj.title[lang]}</h4>
+                    <p class="text-sm text-stone-600 mt-1">${obj.p[lang]}</p>
+                </div>`).join('');
+            
+            document.getElementById('risks-grid').innerHTML = translations.risks.map(r => `
+                <div class="border border-stone-200 p-4 rounded-lg">
+                    <h4 class="font-bold text-slate-700">${r.dept[lang]}</h4>
+                    <p class="text-sm text-stone-600"><strong>${lang === 'ar' ? 'الأخطار:' : 'Risks:'}</strong> ${r.risk[lang]}</p>
+                </div>`).join('');
+
+            document.getElementById('teams-structure-grid').innerHTML = translations.teams_structure.map(t => `
+                <div class="bg-gray-200 p-3 rounded-lg shadow">${t.icon}<br>${t.name[lang]}</div>
+            `).join('');
+
+            createAccordion('definitions-accordion-container', translations.definitions, true);
+            populateTeamLists();
+            createAccordion('roles-accordion-container', translations.roles);
+            
+            document.getElementById('phase1-steps').innerHTML = translations.phase1_steps.map((step, i) => `
+                <li class="mb-10 ms-6"><span class="absolute flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full -start-4 ring-4 ring-white">${i+1}</span><h4 class="font-bold text-slate-700">${step.title[lang]}</h4><p class="text-sm text-stone-600">${step.p[lang]}</p></li>
+            `).join('');
+            document.getElementById('phase2-steps').innerHTML = translations.phase2_steps.map((step, i) => `
+                <li class="mb-10 ms-6"><span class="absolute flex items-center justify-center w-8 h-8 bg-green-100 rounded-full -start-4 ring-4 ring-white">${i+1}</span><h4 class="font-bold text-slate-700">${step.title[lang]}</h4><p class="text-sm text-stone-600">${step.p[lang]}</p></li>
+            `).join('');
+
+            const riskTabsContainer = document.getElementById('risk-tabs');
+            const currentActiveTab = riskTabsContainer.querySelector('.active')?.id;
+            riskTabsContainer.innerHTML = '';
+            translations.risk_tabs.forEach((tab, index) => {
+                 const button = document.createElement('button');
+                 button.id = `${tab.id}-btn`;
+                 button.onclick = (e) => switchTab('activation', tab.id, e.currentTarget);
+                 button.className = `tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-stone-500 hover:text-stone-700 hover:border-stone-300`;
+                 button.innerHTML = `${tab.icon} ${tab.text[lang]}`;
+                 riskTabsContainer.appendChild(button);
+            });
+
+            const activeTabButton = currentActiveTab ? riskTabsContainer.querySelector(`#${currentActiveTab.replace('-emergency', '-emergency-btn')}`) : riskTabsContainer.children[0];
+            if(activeTabButton){
+                activeTabButton.classList.add('active', 'text-amber-600', 'border-amber-500');
+                activeTabButton.classList.remove('text-stone-500', 'hover:text-stone-700', 'hover:border-stone-300');
+            } else if (riskTabsContainer.children.length > 0) {
+                 riskTabsContainer.children[0].classList.add('active', 'text-amber-600', 'border-amber-500');
+                 riskTabsContainer.children[0].classList.remove('text-stone-500', 'hover:text-stone-700', 'hover:border-stone-300');
+            }
+
+
+            createAccordion('fire-procedures', translations.procedures_fire);
+            createAccordion('medical-procedures', translations.procedures_medical);
+            createAccordion('environmental-procedures', translations.procedures_environmental);
+            
+            document.getElementById('extinguisher-types').innerHTML = translations.extinguisher_types.map(t => `
+                <div class="bg-stone-50 p-3 rounded-lg border"><h5 class="font-bold">${t.name[lang]}</h5><p class="text-sm text-stone-600">${t.use[lang]}</p></div>
+            `).join('');
+            
+            populateInspectionTable();
+            document.getElementById('alarm-system-info').innerHTML = translations.alarm_system_info.map(info => `<li>${info[lang]}</li>`).join('');
+            
+            document.getElementById('evacuation-instructions').innerHTML = translations.evacuation_instructions.map(inst => `<li>${inst[lang]}</li>`).join('');
+            document.getElementById('assembly-points').innerHTML = translations.assembly_points.map(p => `
+                <div class="border-2 border-green-500 bg-green-50 p-4 rounded-lg"><h4 class="font-bold text-green-800">${p.title[lang]}</h4><p class="text-green-700">${p.location[lang]}</p></div>
+            `).join('');
+
+            populateLayoutTabs();
+            
+            document.getElementById('safety-policy-list').innerHTML = translations.safety_policy.map(p => `<li>${p[lang]}</li>`).join('');
+            document.getElementById('investigation-steps').innerHTML = translations.investigation_steps.map(s => `<li>${s[lang]}</li>`).join('');
+            
+            populateContacts();
+
+            setupFireExtinguisherChart();
+
+            document.querySelectorAll('.border-r-4, .border-l-4').forEach(el => {
+                el.classList.toggle('border-r-4', dir === 'rtl');
+                el.classList.toggle('border-l-4', dir === 'ltr');
+                 el.classList.toggle('border-l-0', dir === 'rtl');
+                el.classList.toggle('border-r-0', dir === 'ltr');
+            });
+             document.querySelectorAll('.border-r-2, .border-l-2').forEach(el => {
+                el.classList.toggle('border-r-2', dir === 'rtl');
+                el.classList.toggle('border-l-2', dir === 'ltr');
+                el.classList.toggle('ms-4', dir === 'rtl');
+                el.classList.toggle('me-4', dir === 'ltr');
+            });
+        }
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+            updateUI();
+        }
+
+        function setupFireExtinguisherChart() {
+            if (fireExtinguisherChart) {
+                fireExtinguisherChart.destroy();
+            }
+            const ctx = document.getElementById('fireExtinguisherChart').getContext('2d');
+            fireExtinguisherChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: translations.equipment_chart_labels[currentLanguage],
+                    datasets: [{
+                        label: currentLanguage === 'ar' ? 'العدد' : 'Count',
+                        data: translations.equipment_data,
+                        backgroundColor: ['#38bdf8', '#f87171', '#facc15', '#a78bfa'],
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { family: currentLanguage === 'ar' ? 'Tajawal' : 'Readex Pro', size: 14 } } },
+                        tooltip: { bodyFont: { family: currentLanguage === 'ar' ? 'Tajawal' : 'Readex Pro' }, titleFont: { family: currentLanguage === 'ar' ? 'Tajawal' : 'Readex Pro' } }
+                    }
+                }
+            });
+        }
+
+        function populateTeamLists() {
+            const container = document.getElementById('team-lists-container');
+            container.innerHTML = '';
+            translations.teams.forEach(team => {
+                let membersHtml = team.members.map(member => {
+                    if (typeof member === 'object' && member.role) { // Security & Safety Team
+                        return `<li class="flex justify-between items-center"><div>${member.name}<br><span class="text-xs text-stone-500">${member.role[currentLanguage]}</span></div><span class="text-sm font-semibold text-slate-600">${member.phone}</span></li>`;
+                    } else if (typeof member === 'object' && !member.role) { // Maintenance Team
+                        return `<li class="flex justify-between items-center"><span>${member.name}</span> <span class="text-sm font-semibold text-slate-600">${member.phone}</span></li>`;
+                    }
+                    return `<li>${member}</li>`; // Simple name list
+                }).join('');
+                
+                const card = document.createElement('div');
+                card.className = "bg-stone-50 p-4 rounded-lg border border-stone-200";
+                card.innerHTML = `<h4 class="font-bold text-slate-700 mb-2">${team.name[currentLanguage]}</h4><ul class="text-sm text-stone-600 space-y-2 h-48 overflow-y-auto ps-4">${membersHtml}</ul>`;
+                container.appendChild(card);
+            });
+        }
+        
+        function createAccordion(containerId, data, isDefinition = false) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            data.forEach(item => {
+                const element = document.createElement('div');
+                element.className = 'border border-stone-200 rounded-lg overflow-hidden bg-white';
+                let title = item.role?.[currentLanguage] || item.title?.[currentLanguage] || item.term?.[currentLanguage];
+                let contentData = item.duties?.[currentLanguage] || item.steps?.[currentLanguage] || [item.definition?.[currentLanguage]];
+                let contentList = Array.isArray(contentData) ? contentData : [contentData];
+                
+                element.innerHTML = `
+                    <button class="w-full text-start p-4 bg-stone-50 hover:bg-stone-100 focus:outline-none flex justify-between items-center" onclick="toggleAccordionContent(this)">
+                        <span class="font-bold text-slate-700">${title}</span>
+                        <span class="transform transition-transform duration-300 text-stone-500">▼</span>
+                    </button>
+                    <div class="accordion-content p-4 text-stone-700">
+                         <ul class="${isDefinition ? '' : 'list-disc list-inside'} space-y-2">${contentList.map(c => `<li>${c}</li>`).join('')}</ul>
+                    </div>
+                `;
+                container.appendChild(element);
+            });
+        }
+
+        function toggleAccordionContent(button) {
+            const content = button.nextElementSibling;
+            const icon = button.querySelector('span:last-child');
+            if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+                content.style.maxHeight = null;
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+        
+        function populateInspectionTable() {
+            const headContainer = document.getElementById('inspection-table-head');
+            const bodyContainer = document.getElementById('inspection-table-body');
+            headContainer.innerHTML = translations.inspection_headers[currentLanguage].map(h => `<th class="px-6 py-3 text-start text-xs font-medium text-stone-500 uppercase tracking-wider">${h}</th>`).join('');
+            bodyContainer.innerHTML = translations.inspection_rows.map(row => `<tr>${row.cells[currentLanguage].map(cell => `<td class="px-6 py-4 whitespace-nowrap text-sm text-stone-600">${cell}</td>`).join('')}</tr>`).join('');
+        }
+
+        function populateContacts() {
+            const externalContainer = document.getElementById('external-contacts-container');
+            const internalContainer = document.getElementById('internal-contacts-container');
+            externalContainer.innerHTML = translations.contacts_external.map(c => `<div class="flex justify-between items-center ${c.type === 'emergency' ? 'bg-red-50' : 'bg-stone-100'} p-3 rounded-lg"><span class="font-bold ${c.type === 'emergency' ? 'text-red-800' : 'text-stone-700'}">${c.entity[currentLanguage]}</span><span class="text-lg font-bold ${c.type === 'emergency' ? 'text-red-800' : 'text-slate-800'} tracking-widest">${c.number}</span></div>`).join('');
+            internalContainer.innerHTML = translations.contacts_internal.map(c => `<div class="flex justify-between items-center bg-stone-100 p-3 rounded-lg"><span class="text-stone-700">${c.role[currentLanguage]}</span><span class="font-semibold text-slate-800">${c.number}</span></div>`).join('');
+        }
+        
+        function showSection(sectionId, element) {
+            document.querySelectorAll('.content-section').forEach(section => section.classList.add('hidden'));
+            const currentSection = document.getElementById(sectionId);
+            if(currentSection) currentSection.classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active-nav'));
+            element.classList.add('active-nav');
+        }
+
+        function switchTab(section, tabId, buttonElement) {
+            const sectionElement = document.getElementById(section);
+            if (!sectionElement) return;
+            sectionElement.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            const tabContent = sectionElement.querySelector(`#${tabId}`);
+            if(tabContent) tabContent.classList.remove('hidden');
+            
+            sectionElement.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active', 'text-amber-600', 'border-amber-500');
+                button.classList.add('text-stone-500', 'hover:text-stone-700', 'hover:border-stone-300');
+            });
+            buttonElement.classList.add('active', 'text-amber-600', 'border-amber-500');
+            buttonElement.classList.remove('text-stone-500', 'hover:text-stone-700', 'hover:border-stone-300');
+        }
+
+        function populateLayoutTabs() {
+            const tabsContainer = document.getElementById('layout-tabs');
+            const imageDisplay = document.getElementById('layout-image-display');
+            tabsContainer.innerHTML = '';
+            translations.layout_tabs.forEach((tab, index) => {
+                const button = document.createElement('button');
+                button.className = 'layout-tab whitespace-nowrap py-2 px-3 border-b-2 font-medium text-sm';
+                if (index === 0) {
+                    button.classList.add('active');
+                    imageDisplay.src = tab.src;
+                }
+                button.innerText = tab.text[currentLanguage];
+                button.onclick = () => {
+                    imageDisplay.src = tab.src;
+                    tabsContainer.querySelectorAll('.layout-tab').forEach(t => t.classList.remove('active'));
+                    button.classList.add('active');
+                };
+                tabsContainer.appendChild(button);
+            });
+        }
+
+        function openLightbox(src) {
+            document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox').classList.remove('hidden');
+        }
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.add('hidden');
+        }
+        
+        async function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const downloadBtn = document.getElementById('download-pdf-btn');
+            const originalBtnHTML = downloadBtn.innerHTML;
+            downloadBtn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>${currentLanguage === 'ar' ? 'جاري الإنشاء...' : 'Generating...'}</span>`;
+            downloadBtn.disabled = true;
+
+            const content = document.getElementById('main-content');
+            const currentActiveSectionId = document.querySelector('.nav-item.active-nav')?.href.split('#')[1] || 'dashboard';
+            const collapsedAccordions = Array.from(content.querySelectorAll('.accordion-content'));
+            const originalScrollPos = content.scrollTop;
+            
+            // Prepare UI for capture
+            content.scrollTop = 0;
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('hidden'));
+            collapsedAccordions.forEach(a => {
+                if (a.style.maxHeight === '0px' || !a.style.maxHeight) {
+                    a.style.maxHeight = a.scrollHeight + 'px';
+                }
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, 500)); 
+
+            try {
+                const canvas = await html2canvas(content, { scale: 2, useCORS: true, logging: false, windowWidth: content.scrollWidth, windowHeight: content.scrollHeight });
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+                const ratio = imgWidth / pdfWidth;
+                const totalPDFPages = Math.ceil(imgHeight / (pdfHeight * ratio));
+
+                for (let i = 0; i < totalPDFPages; i++) {
+                    if (i > 0) pdf.addPage();
+                    const y = -(pdfHeight * i * ratio);
+                    pdf.addImage(canvas, 'PNG', 0, y, pdfWidth, imgHeight / ratio, undefined, 'FAST');
+                }
+                
+                pdf.save('Reem_Batteries_Emergency_Plan.pdf');
+
+            } catch (error) {
+                console.error("Error generating PDF:", error);
+            } finally {
+                // Restore UI
+                document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
+                document.getElementById(currentActiveSectionId)?.classList.remove('hidden');
+                
+                collapsedAccordions.forEach(a => a.style.maxHeight = null);
+                content.scrollTop = originalScrollPos;
+                
+                downloadBtn.innerHTML = originalBtnHTML;
+                downloadBtn.disabled = false;
+                downloadBtn.querySelector('span').innerText = translations.download_pdf_btn[currentLanguage];
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUI();
+        });
+    </script>
+</body>
+</html>
+
